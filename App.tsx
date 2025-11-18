@@ -77,7 +77,13 @@ const App: React.FC = () => {
       case 'home':
         return <HomeScreen onMoodSelect={handleMoodSelect} onNavigate={(page) => setActivePage(page)} stories={stories} onAddStory={handleAddStory} />;
       case 'chat':
-        return <ChatScreen />;
+        return (
+            <ChatScreen 
+                moodHistory={moodHistory}
+                journalEntries={journalEntries}
+                userProfile={userProfile}
+            />
+        );
       case 'activities':
         return <ActivitiesScreen />;
       case 'growth':

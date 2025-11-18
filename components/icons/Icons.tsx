@@ -4,11 +4,26 @@ import React from 'react';
 type IconProps = React.SVGProps<SVGSVGElement>;
 
 export const LotusLogo = (props: IconProps) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-     <path d="M12 16C14.5 16 16.5 14 16.5 11.5C16.5 9 14.5 7 12 7C9.5 7 7.5 9 7.5 11.5C7.5 14 9.5 16 12 16Z" className="text-violet-400" />
-     <path d="M12 2C10.5 2 9 3 9 4.5C9 6 10.5 7 12 7C13.5 7 15 6 15 4.5C15 3 13.5 2 12 2Z" className="text-violet-300 opacity-50" />
-     <path fillRule="evenodd" clipRule="evenodd" d="M12 17C16.4183 17 20 13.4183 20 9C20 8.44772 20.4477 8 21 8C21.5523 8 22 8.44772 22 9C22 14.5228 17.5228 19 12 19C6.47715 19 2 14.5228 2 9C2 8.44772 2.44772 8 3 8C3.55228 8 4 8.44772 4 9C4 13.4183 7.58172 17 12 17Z" className="text-violet-600" />
-     <path d="M8 18C6 19.5 5 21.5 5 22H19C19 21.5 18 19.5 16 18C14.5 16.875 13.5 17.5 12 17.5C10.5 17.5 9.5 16.875 8 18Z" className="text-violet-600" />
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" {...props}>
+     {/* Sun */}
+     <circle cx="12" cy="9" r="3.5" className="fill-violet-100 dark:fill-violet-900/50 stroke-violet-600 dark:stroke-violet-400" strokeWidth="1.5" />
+     
+     {/* Rays */}
+     <g className="text-violet-300 dark:text-violet-600 opacity-50" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <path d="M12 4V2.5" />
+        <path d="M12 15.5V14" />
+        <path d="M17 9H18.5" />
+        <path d="M5.5 9H7" />
+        <path d="M15.54 5.46L16.6 4.4" />
+        <path d="M8.46 12.54L7.4 13.6" />
+        <path d="M15.54 12.54L16.6 13.6" />
+        <path d="M8.46 5.46L7.4 4.4" />
+     </g>
+
+     {/* Hands Holding */}
+     <path d="M4 16C4 16 6.5 21 12 21C17.5 21 20 16 20 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-violet-600 dark:text-violet-400" />
+     <path d="M4 16C3 16 2 16.5 2 17.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-violet-600 dark:text-violet-400" />
+     <path d="M20 16C21 16 22 16.5 22 17.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-violet-600 dark:text-violet-400" />
   </svg>
 );
 

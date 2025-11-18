@@ -42,7 +42,7 @@ const InsightCard: React.FC<{ title: string, text: string, type: 'pattern' | 'st
     };
 
     return (
-        <div className={`p-4 rounded-xl border ${colors[type]} transition-all duration-300 hover:shadow-md`}>
+        <div className={`p-4 rounded-xl border ${colors[type]} transition-all duration-300 hover:shadow-md h-full`}>
             <h4 className="font-bold text-sm mb-1 uppercase opacity-80">{title}</h4>
             <p className="text-sm font-medium">{text}</p>
         </div>
@@ -50,7 +50,7 @@ const InsightCard: React.FC<{ title: string, text: string, type: 'pattern' | 'st
 };
 
 const StatBox: React.FC<{ icon: React.ElementType, value: string, label: string }> = ({ icon: Icon, value, label }) => (
-    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl text-center">
+    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl text-center h-full flex flex-col justify-center items-center">
         <Icon className="w-6 h-6 mx-auto mb-2 text-slate-400" />
         <div className="font-bold text-lg text-slate-700 dark:text-slate-200">{value}</div>
         <div className="text-xs text-slate-500 uppercase tracking-wide">{label}</div>
@@ -94,10 +94,18 @@ const ProgressScreen: React.FC<{ moodHistory: MoodEntry[], journalEntries: Journ
 
         if (range === 'weekly') return baseData;
         
+        if (range === 'yearly') {
+            return Array.from({ length: 12 }).map((_, i) => ({
+                 date: `M${i+1}`,
+                 value: Math.floor(Math.random() * 3) + 3, // Random mood between 3 and 5
+                 mood: 'happy'
+            }));
+        }
+
         // Simulate more data points for longer ranges
-        const dummyPoints = range === 'monthly' ? 30 : range === 'quarterly' ? 90 : 12;
+        const dummyPoints = range === 'monthly' ? 30 : 90;
         return Array.from({ length: dummyPoints }).map((_, i) => ({
-             date: range === 'yearly' ? `M${i+1}` : `Day ${i+1}`,
+             date: `Day ${i+1}`,
              value: Math.floor(Math.random() * 3) + 3, // Random mood between 3 and 5
              mood: 'happy'
         }));
@@ -107,43 +115,66 @@ const ProgressScreen: React.FC<{ moodHistory: MoodEntry[], journalEntries: Journ
 
     // Dynamic Calculations for Stats and Insights
     const { insights, stats } = useMemo(() => {
-        // Calculate basic stats
         const moodCount = moodHistory.length;
         const journalCount = journalEntries.length;
         const lastMoods = moodHistory.slice(-5);
         const recentAvg = lastMoods.reduce((acc, curr) => acc + moodToValue[curr.mood], 0) / (lastMoods.length || 1);
         
-        // Dynamic Stats
-        const estimatedScreenTimeMinutes = (journalCount * 12) + (moodCount * 3) + 150; // Fake baseline + usage
+        // Dynamic Stats based on usage
+        // Roughly estimating interaction time based on entries
+        const estimatedScreenTimeMinutes = (journalCount * 15) + (moodCount * 2); 
         const hours = Math.floor(estimatedScreenTimeMinutes / 60);
         const minutes = estimatedScreenTimeMinutes % 60;
         const screenTimeStr = `${hours}h ${minutes}m`;
-        const notifsCount = Math.floor(Math.random() * 15) + 20; // Randomish between 20-35
         
-        // Dynamic Insights
+        // Estimate notifications based on interaction frequency (pseudo-logic)
+        const notifsCount = Math.max(2, Math.floor(journalCount * 1.2) + 3);
+        
+        // Content analysis for insights
+        const journalText = journalEntries.map(j => j.text.toLowerCase()).join(' ');
+        const meetingCount = (journalText.match(/meeting|call|zoom|team|boss|standup|work/g) || []).length;
+
+        const stressKeywords = ['stress', 'tired', 'deadline', 'anxious', 'bad', 'overwhelmed', 'tough', 'hard', 'pressure'];
+        const positiveKeywords = ['happy', 'good', 'great', 'excited', 'proud', 'calm', 'peace', 'joy', 'win'];
+        const sleepKeywords = ['sleep', 'tired', 'insomnia', 'awake', 'night', 'nap', 'rest'];
+        const workKeywords = ['job', 'work', 'office', 'boss', 'project', 'career'];
+        
+        const stressMentions = stressKeywords.reduce((acc, word) => acc + (journalText.match(new RegExp(word, 'g')) || []).length, 0);
+        const positiveMentions = positiveKeywords.reduce((acc, word) => acc + (journalText.match(new RegExp(word, 'g')) || []).length, 0);
+        const sleepMentions = sleepKeywords.reduce((acc, word) => acc + (journalText.match(new RegExp(word, 'g')) || []).length, 0);
+        const workMentions = workKeywords.reduce((acc, word) => acc + (journalText.match(new RegExp(word, 'g')) || []).length, 0);
+
         const newInsights = [];
         
-        // Pattern Insight
-        if (recentAvg >= 4) {
-            newInsights.push({ type: 'pattern' as const, title: 'Positive Trend', text: "You've been feeling consistently good lately!" });
-        } else if (recentAvg <= 2.5) {
-            newInsights.push({ type: 'pattern' as const, title: 'Challenging Week', text: "It seems like a tough week. Be gentle with yourself." });
+        // Pattern Insight based on content
+        if (sleepMentions > 1) {
+             newInsights.push({ type: 'pattern' as const, title: 'Sleep Patterns', text: "You've mentioned sleep issues recently. Consider a wind-down routine." });
+        } else if (workMentions > 3 && stressMentions > 2) {
+             newInsights.push({ type: 'pattern' as const, title: 'Work Stress', text: "Work seems to be a major stressor this week. Remember to take breaks." });
+        } else if (positiveMentions > stressMentions) {
+            newInsights.push({ type: 'pattern' as const, title: 'Positivity Peak', text: "Your journal reflects high energy and gratitude lately!" });
+        } else if (journalCount === 0) {
+            newInsights.push({ type: 'pattern' as const, title: 'Getting Started', text: "Start journaling to see patterns emerge." });
         } else {
-             newInsights.push({ type: 'pattern' as const, title: 'Balanced Mood', text: "Your mood has been quite stable recently." });
+             newInsights.push({ type: 'pattern' as const, title: 'Steady Flow', text: "You're maintaining a balanced emotional state this week." });
         }
 
         // Strength Insight
-        if (journalCount > 2) {
-            newInsights.push({ type: 'strength' as const, title: 'Expressive', text: `You've journaled ${journalCount} times. Great emotional release!` });
+        if (journalCount > 5) {
+            newInsights.push({ type: 'strength' as const, title: 'Deep Reflector', text: `You've journaled ${journalCount} times. Self-reflection is becoming a habit.` });
+        } else if (recentAvg > 4) {
+             newInsights.push({ type: 'strength' as const, title: 'Resilience', text: "You've maintained a positive outlook despite daily challenges." });
         } else {
-            newInsights.push({ type: 'strength' as const, title: 'Consistency', text: "You're building a great habit of checking in daily." });
+             newInsights.push({ type: 'strength' as const, title: 'Consistency', text: "Tracking your mood daily builds emotional awareness." });
         }
 
         // Suggestion Insight
-        if (recentAvg < 3) {
-            newInsights.push({ type: 'suggestion' as const, title: 'Try This', text: "Feeling low? The 'Box Breathing' activity might help." });
+        if (recentAvg < 3 || stressMentions > 2) {
+            newInsights.push({ type: 'suggestion' as const, title: 'Try This', text: "The '4-7-8 Breathing' exercise is great for reducing acute stress." });
+        } else if (positiveMentions > 2) {
+            newInsights.push({ type: 'suggestion' as const, title: 'Share the Joy', text: "Consider writing a gratitude entry to lock in these good feelings." });
         } else {
-            newInsights.push({ type: 'suggestion' as const, title: 'Reflection', text: "What's the best thing that happened today? Note it down." });
+            newInsights.push({ type: 'suggestion' as const, title: 'Daily Prompt', text: "What is one thing you are looking forward to tomorrow?" });
         }
 
         return {
@@ -151,7 +182,7 @@ const ProgressScreen: React.FC<{ moodHistory: MoodEntry[], journalEntries: Journ
             stats: {
                 screenTime: screenTimeStr,
                 notifs: notifsCount,
-                meetings: Math.floor(Math.random() * 5) + 2
+                meetings: meetingCount
             }
         };
 
@@ -195,7 +226,7 @@ const ProgressScreen: React.FC<{ moodHistory: MoodEntry[], journalEntries: Journ
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="font-bold text-slate-800 dark:text-slate-100 capitalize">{timeRange} Dashboard</h2>
                         <span className="text-emerald-500 text-sm font-bold bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-lg">
-                            +{(Math.random() * 20 + 5).toFixed(0)}% Improved
+                            Trend: Stable
                         </span>
                     </div>
                     <div className="flex-grow -ml-4">
@@ -213,13 +244,11 @@ const ProgressScreen: React.FC<{ moodHistory: MoodEntry[], journalEntries: Journ
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                                 <XAxis 
                                     dataKey="date" 
-                                    tick={{ fill: '#94a3b8', fontSize: 12 }} 
+                                    tick={{ fill: '#94a3b8', fontSize: 10 }} 
                                     axisLine={false} 
                                     tickLine={false} 
                                     dy={10} 
-                                    // Ensure all ticks show for yearly view on tablets/mobile if needed, or let recharts handle it.
-                                    interval={timeRange === 'yearly' ? 0 : 'preserveStartEnd'} 
-                                    // Allow wrapping or smaller fonts if needed on very small screens, but M1 is short enough.
+                                    interval={timeRange === 'yearly' ? 0 : 'preserveStartEnd'}
                                 />
                                 <YAxis 
                                     domain={[0, 6]} 
@@ -247,21 +276,20 @@ const ProgressScreen: React.FC<{ moodHistory: MoodEntry[], journalEntries: Journ
                 {/* Insights & Stats */}
                 <div className="space-y-6">
                      <section className="space-y-3">
-                        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Recent Insights</h3>
-                        {insights.map((insight, idx) => (
-                            <InsightCard key={idx} type={insight.type} title={insight.title} text={insight.text} />
-                        ))}
+                        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Insights from Your Journal</h3>
+                        <div className="grid gap-3">
+                            {insights.map((insight, idx) => (
+                                <InsightCard key={idx} type={insight.type} title={insight.title} text={insight.text} />
+                            ))}
+                        </div>
                     </section>
 
                     <section>
                         <h3 className="text-sm font-semibold text-slate-500 mb-3 uppercase tracking-wider">Digital Wellbeing (Est.)</h3>
-                        <div className="grid grid-cols-3 gap-3">
-                            <StatBox icon={ClockIcon} value={stats.screenTime} label="Screen Time" />
-                            <StatBox icon={BellIcon} value={stats.notifs.toString()} label="Notifs" />
-                            <StatBox icon={CalendarIcon} value={stats.meetings.toString()} label="Meetings" />
-                        </div>
-                         <div className="mt-3 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl flex items-center justify-center text-sm text-indigo-700 dark:text-indigo-300 font-medium">
-                            <span className="mr-2">🌙</span> 7h 20m Sleep (Phone Idle)
+                        <div className="grid grid-cols-3 gap-3 h-32">
+                            <StatBox icon={ClockIcon} value={stats.screenTime} label="Time in App" />
+                            <StatBox icon={BellIcon} value={stats.notifs.toString()} label="Actions" />
+                            <StatBox icon={CalendarIcon} value={stats.meetings.toString()} label="Work Mentions" />
                         </div>
                     </section>
                 </div>
